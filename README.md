@@ -9,4 +9,4 @@ Portfolio of my relevant projects for a Master's at the City of New York - Schoo
   
   Advanced Programming Techniques DATA 602:
   
-  *SimplifiedBlockChain.py -- A simplified block chain was develop to understand how a growing list of transactions (blocks), are linked using cryptography (hashes) to make the list of transactions tamper resistance. 
+  *DATA602-SimplifiedBlockChain.py -- A simplified block chain was develop to understand how a growing list of transactions (blocks), are linked using cryptography (hashes) to make the list of transactions tamper resistance. 
