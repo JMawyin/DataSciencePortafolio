@@ -9,4 +9,8 @@ Portfolio of my relevant projects for a Master's at the City of New York - Schoo
   
   Advanced Programming Techniques DATA 602:
   
-  *DATA602-SimplifiedBlockChain.py -- A simplified block chain was develop to understand how a growing list of transactions (blocks), are linked using cryptography (hashes) to make the list of transactions tamper resistance. 
+  *DATA602-SimplifiedBlockChain.py -- A simplified block chain was develop to understand how a growing list of transactions (blocks), are linked using cryptography (hashes) to make the list of transactions tamper resistance.
+  
+   DATA 608 - Knowledge and Visual Analytics:
+  
+  *608_Final_Project.Rmd AND 608-FP_app.py -- Developed a interactive DataTable using Dash/Plotly to visualize the effect of variable electricity price on consumer demand.
