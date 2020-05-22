@@ -1,0 +1,193 @@
+---
+title: "608_Final_Project"
+author: "Jose Mawyin"
+date: "5/9/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(fig.width=12, fig.height=6)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(forecast) #To Analyze TimeSeries
+library(tictoc) #Timing Processes
+library(stringr)
+library(tidyr)
+library(maditr) #Data Aggregation
+library(lubridate)
+library(plyr)
+library(viridis) # colour blind friendly palette, works in B&W also
+library(ggeffects) #Create Tidy Data Frames of Marginal Effects for 'ggplot' from Model Outputs
+library(ggiraphExtra) #Make Interactive 'ggplot2'
+library(nnet)
+library(ROCR)
+library(car)
+load("more/nc.RData")
+```
+
+## R Markdown
+
+```{r}
+London.Energy.2013<- read_csv("/Users/josemawyin/607_Final_Project/London.Energy.2013.csv")
+glimpse(London.Energy.2013)
+```
+```{r}
+table(London.Energy.2013$Acorn)
+```
+```{r}
+table(London.Energy.2013$Acorn_grouped)
+```
+
+
+```{r,eval=FALSE}
+#**Subsetting by type of Acorn_grouped:**
+London.Energy.2013.Comfortable <- filter(London.Energy.2013, str_detect(London.Energy.2013$Acorn_grouped, 'Comfortable'))
+write.csv(London.Energy.2013.Comfortable, "/Users/josemawyin/607_Final_Project/London.Energy_2013_Comfortable.csv")
+#rm(London.Energy.2013)
+#**Subsetting by type of meter:**
+London.Energy.2013.Comfortable.Std <- filter(London.Energy.2013.Comfortable, str_detect(London.Energy.2013.Comfortable$stdorToU, 'Std'))
+write.csv(London.Energy.2013.Comfortable.Std, "/Users/josemawyin/607_Final_Project/London.Energy_2013_Comfortable_Std.csv")
+London.Energy.2013.Comfortable.ToU <- filter(London.Energy.2013.Comfortable, str_detect(London.Energy.2013.Comfortable$stdorToU, 'ToU'))
+write.csv(London.Energy.2013.Comfortable.ToU, "/Users/josemawyin/607_Final_Project/London.Energy_2013_Comfortable_ToU.csv")
+rm(London.Energy.2013.Comfortable)
+```
+
+*London.Energy_2013_Comfortable_Std.csv
+*London.Energy_2013_Comfortable_ToU.csv
+
+*London.Energy_2013_Affluent_Std.csv
+*London.Energy_2013_Affluent_ToU.csv
+
+*London.Energy_2013_Adversity_Std.csv
+London.Energy_2013_Adversity_ToU.csv
+
+
+```{r, eval=FALSE}
+London.Energy.2013.L.ToU<- read_csv("/Users/josemawyin/607_Final_Project/London.Energy_2013_Adversity_ToU.csv")
+Number.Houses <- aggregate(X1 ~ LCLid, London.Energy.2013.L.ToU, function(x) length(unique(x)))
+attach(London.Energy.2013.L.ToU)
+Number.Houses <- aggregate(X1 ~ LCLid, London.Energy.2013.L.ToU, function(x) length(unique(x)))
+Full.Year <- filter(Number.Houses, str_detect(Number.Houses$X1, '17532'))
+
+Full.Year.Data <- filter(London.Energy.2013.L.ToU, London.Energy.2013.L.ToU$LCLid %in% Full.Year$LCLid)
+Full.Year.Data <- select(Full.Year.Data, DateTime, LCLid, KWH.hh..per.half.hour.)
+Full.Year.Data$DateTime <- as.factor(Full.Year.Data$DateTime)
+Full.Year.Data$KWH.hh..per.half.hour. <-as.integer(1000*Full.Year.Data$KWH.hh..per.half.hour. ) 
+glimpse(Full.Year.Data)
+Houses <- 420768/17532
+
+Wide.2013.L.ToU <- dcast(Full.Year.Data, DateTime ~ Full.Year.Data$LCLid, value.var = "KWH.hh..per.half.hour.", fun.aggregate = sum)
+Wide.2013.L.ToU.size <- dim(Wide.2013.L.ToU)
+
+average.2013.L.ToU <- data.frame(ID=Wide.2013.L.ToU[,1], Means=rowMeans(Wide.2013.L.ToU[,-1]))
+#head(average.2013.L.ToU)
+
+attach(average.2013.L.ToU)
+average.2013.L.ToU$DateTime <- as_datetime(average.2013.L.ToU$DateTime)
+average.2013.L.ToU$ymd <-ymd_hms(DateTime)
+average.2013.L.ToU$month <- month(average.2013.L.ToU$ymd, label = TRUE)
+average.2013.L.ToU$year <- year(average.2013.L.ToU$ymd)
+average.2013.L.ToU$wday <- wday(average.2013.L.ToU$ymd, label = TRUE)
+average.2013.L.ToU$hour <- hour(average.2013.L.ToU$ymd)
+attach(average.2013.L.ToU)
+#head(average.2013.L.ToU)
+#write.csv(average.2013.L.ToU, "/Users/josemawyin/607_Final_Project/Ave_London.Energy_2013_Adversity_ToU.csv")
+
+dayHour <- ddply(average.2013.L.ToU, c( "hour", "wday"), summarise,
+                    N    = mean(Means)
+)
+
+#reverse order of months for easier graphing
+dayHour$wday <- factor(dayHour$wday, levels=rev(levels(dayHour$wday)))
+dayHour$Acorn_group <- as.factor("Adversity")
+dayHour$stdorToU <- as.factor("Std")
+#write.csv(dayHour, "/Users/josemawyin/607_Final_Project/dayHour.csv")
+head(dayHour)
+attach(dayHour)
+```
+
+```{r}
+United_dayHour<-rbind(United_dayHour, dayHour)
+table(United_dayHour$stdorToU, United_dayHour$Acorn_group)
+#write.csv(United_dayHour, "/Users/josemawyin/607_Final_Project/United_dayHour.csv")
+```
+
+```{r, warning=FALSE, echo=FALSE, message=FALSE}
+average_group <- read.csv("/Users/josemawyin/607_Final_Project/Ave_London.Energy_2013_Adversity_ToU.csv")
+e <- ggplot(average_group, aes(y= Means, x = ymd))
+e +  geom_point(size = 0.1) + geom_smooth(method = 'auto') +
+  theme_bw() + theme_minimal() +
+  labs(title = "Annual Seasonality in Electricity Comsumtion ",
+       x = "Date", y = "Electricity Comsumtion (watt.hours.hour)") 
+```
+
+*London.Energy_2013_Comfortable_Std.csv
+*London.Energy_2013_Comfortable_ToU.csv
+
+*London.Energy_2013_Affluent_Std.csv
+*London.Energy_2013_Affluent_ToU.csv
+
+London.Energy_2013_Adversity_Std.csv
+London.Energy_2013_Adversity_ToU.csv
+```{r}
+tariff_data <- read_csv("/Users/josemawyin/607_Final_Project/tariff_data.csv")
+average.2013.L.ToU <- read_csv("/Users/josemawyin/607_Final_Project/Ave_London.Energy_2013_Adversity_ToU.csv")
+average.2013.L.Std <- read_csv("/Users/josemawyin/607_Final_Project/Ave_London.Energy_2013_Adversity_Std.csv")
+
+L.ToU.and.Std <- data.frame(data.frame(matrix(NA, nrow = 17520, ncol = 1)))
+attach(L.ToU.and.Std)
+L.ToU.and.Std$DateTime <- average.2013.L.ToU$DateTime
+L.ToU.and.Std$Tariff_Factor <- tariff_data$Tariff_factor
+L.ToU.and.Std$Tariff_Number <- tariff_data$Tariff
+L.ToU.and.Std$L.ToU.Average <- average.2013.L.ToU$Means
+L.ToU.and.Std$L.Std.Average <- average.2013.L.Std$Means
+L.ToU.and.Std$Difference <- average.2013.L.ToU$Means - average.2013.L.Std$Means
+L.ToU.and.Std$Tariff_Factor <- factor(L.ToU.and.Std$Tariff_Factor, levels = c("High", "Normal", "Low")) #Reorder Factors
+#Separating Date and Time
+#L.ToU.and.Std$DateTime <- as_datetime(L.ToU.and.Std$DateTime)
+L.ToU.and.Std$ymd <-ymd_hms(average.2013.L.ToU$DateTime)
+L.ToU.and.Std$month <- month(L.ToU.and.Std$ymd, label = TRUE)
+L.ToU.and.Std$year <- year(L.ToU.and.Std$ymd)
+L.ToU.and.Std$wday <- wday(L.ToU.and.Std$ymd, label = TRUE)
+L.ToU.and.Std$hour <- hour(L.ToU.and.Std$ymd)
+L.ToU.and.Std$hour < as.factor(L.ToU.and.Std$hour)
+L.ToU.and.Std <- L.ToU.and.Std[-1]
+write.csv(L.ToU.and.Std, "/Users/josemawyin/607_Final_Project/Adversity.ToU.and.Std.csv")
+```
+
+```{r, warning=FALSE, echo=FALSE}
+boxplot_data <- read_csv("/Users/josemawyin/607_Final_Project/Adversity.ToU.and.Std.csv")
+d <- ggplot(boxplot_data, aes(x = Tariff_Factor, y = Difference, color=Tariff_Factor))
+d + geom_point(aes(shape=Tariff_Factor),size=0.3) + geom_jitter(aes(shape=Tariff_Factor),size=0.3,height = 0.5, width = 0.5) + geom_boxplot(outlier.shape=16, aes(group=Tariff_Factor), alpha = 0.3,
+             outlier.size=1, notch=TRUE) +
+  stat_summary(geom = "point", fun.y = "mean", col = "black", size = 3, shape = 24, fill = "red") + labs(title = "Boxplot and Jittered Histogram of Electricity Demand Vs Pricing Signal \nDifference Mean Shown by Red Triangle",
+       x = "Electricity Pricing Signal", y = "Difference in Electricity Demand [ToU - STd] (kw.hh.h)") + coord_flip()
+```
+
+```{r}
+Comfortable <- read_csv("/Users/josemawyin/607_Final_Project/Comfortable.ToU.and.Std.csv")
+Affluent <- read_csv("/Users/josemawyin/607_Final_Project/Affluent.ToU.and.Std.csv")
+Adversity <- read_csv("/Users/josemawyin/607_Final_Project/Adversity.ToU.and.Std.csv")
+```
+
+```{r}
+Adversity$Acorn_Group <- "Adversity"
+Affluent$Acorn_Group <- "Affluent"
+Comfortable$Acorn_Group <- "Comfortable"
+```
+
+```{r}
+Joint_Acorn_Group <- rbind(Adversity,Affluent,Comfortable)
+write.csv(Joint_Acorn_Group, "/Users/josemawyin/607_Final_Project/Joint_Acorn_Group.csv")
+table(Joint_Acorn_Group$Acorn_Group)
+```
+
+```{r}
+head(Joint_Acorn_Group)
+table(Joint_Acorn_Group$Tariff_Factor)
+```
+
