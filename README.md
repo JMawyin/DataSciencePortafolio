@@ -14,3 +14,10 @@ Portfolio of my relevant projects for a Master's at the City of New York - Schoo
    DATA 608 - Knowledge and Visual Analytics:
   
   *608_Final_Project.Rmd AND 608-FP_app.py -- Developed a interactive DataTable using Dash/Plotly to visualize the effect of variable electricity price on consumer demand.
+  
+   DATA 622 - Machine Learning and Big Data:
+  
+  *DATA622-Classifier Comparisson.Rmd -- Comparisson of how accurate different supervised machine learning algorithms are in sorting out target classes in a data set. 
+  
+  
+  
