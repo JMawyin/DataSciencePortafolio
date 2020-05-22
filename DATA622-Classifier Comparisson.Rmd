@@ -16,8 +16,8 @@ library(magrittr)
 
 ### Loading Data
 ```{r}
-train_loc <- "/Users/josemawyin/Library/Mobile Documents/com~apple~CloudDocs/Data Science Masters /622/622HW3/car_eval_train.csv"
-eval_loc <- "/Users/josemawyin/Library/Mobile Documents/com~apple~CloudDocs/Data Science Masters /622/622HW3/car_eval_test.csv"
+train_loc <- "https://raw.githubusercontent.com/JMawyin/MSDS2019/master/car_eval_train.csv"
+eval_loc <- "https://raw.githubusercontent.com/JMawyin/MSDS2019/master/car_eval_test.csv"
 
 traindatafile<- train_loc
 trdata<-read.csv(traindatafile,head=T,sep=',')
